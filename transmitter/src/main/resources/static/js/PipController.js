@@ -35,6 +35,9 @@ export class PipController {
 
     this._pipWindow = null; // 현재 PiP 창 참조
     this._originalParent = null; // 캔버스 원래 부모 요소
+
+    // 버튼 라벨 요소 (아이콘과 별도 — textContent로 버튼 전체를 덮어쓰지 않기 위함)
+    this._pipBtnLabel = pipBtn ? pipBtn.querySelector('.btn-label') : null;
   }
 
   // ─────────────────────────────────────────────
@@ -104,9 +107,9 @@ export class PipController {
         this._onPipClose();
       });
 
-      // 버튼 텍스트 변경
+      // 버튼 라벨 변경 (아이콘은 유지 — 버튼 전체 textContent를 덮어쓰지 않음)
       if (this.pipBtn) {
-        this.pipBtn.textContent = '항상 위 해제';
+        if (this._pipBtnLabel) this._pipBtnLabel.textContent = '항상 위 해제';
         this.pipBtn.classList.add('pip-active');
       }
 
@@ -157,9 +160,9 @@ export class PipController {
     this._pipWindow = null;
     this._originalParent = null;
 
-    // 버튼 텍스트 복원
+    // 버튼 라벨 복원
     if (this.pipBtn) {
-      this.pipBtn.textContent = '항상 위 (PiP)';
+      if (this._pipBtnLabel) this._pipBtnLabel.textContent = '항상 위';
       this.pipBtn.classList.remove('pip-active');
     }
   }

@@ -1,12 +1,53 @@
 /**
  * @file style.css
  * @description CameraLink 송신기 UI 스타일.
- * 최소한의 스타일로 파일 선택 화면과 전송 화면을 구성한다.
- * OS 다크모드에 영향받지 않도록 배경과 전경색을 명시적으로 지정한다.
+ * 파일 선택 화면은 브랜드 톤(따뜻한 뉴트럴 + 코랄 액센트)의 카드 레이아웃으로 구성한다.
+ * 전송 화면(#transmit-view, #qr-canvas)은 카메라 인식을 위해 항상 순백/순흑을 유지해야 하므로
+ * CSS 변수 대신 고정 색상 값을 사용해 다크모드·테마 변경의 영향을 받지 않도록 격리한다.
  *
  * 관계:
  *   index.html → <link rel="stylesheet"> 로 참조
  */
+
+/* ─────────────────────────────────────────────
+   디자인 토큰 (라이트 기본값)
+   ───────────────────────────────────────────── */
+
+:root {
+  --bg: #f5f4ee;
+  --bg-glow: rgba(217, 119, 87, 0.10);
+  --surface: #ffffff;
+  --border: #e8e3d7;
+  --text: #2b2621;
+  --text-muted: #8c8578;
+  --accent: #d97757;
+  --accent-dark: #bd5f3d;
+  --accent-soft: rgba(217, 119, 87, 0.12);
+  --accent-contrast: #fffaf6;
+  --shadow-sm: 0 1px 2px rgba(43, 38, 33, 0.06);
+  --shadow-md: 0 16px 40px rgba(43, 38, 33, 0.10);
+  --radius-lg: 22px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Pretendard', sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #211d19;
+    --bg-glow: rgba(224, 135, 97, 0.14);
+    --surface: #2a2521;
+    --border: #3c342c;
+    --text: #f1ece2;
+    --text-muted: #a69d8d;
+    --accent: #e0855f;
+    --accent-dark: #c96c48;
+    --accent-soft: rgba(224, 135, 97, 0.16);
+    --accent-contrast: #211d19;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+    --shadow-md: 0 16px 40px rgba(0, 0, 0, 0.35);
+  }
+}
 
 /* ─────────────────────────────────────────────
    리셋 및 기본 설정
@@ -19,15 +60,17 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #1a1a1a;
-  color: #fff;
-  height: 100vh;
+  font-family: var(--font);
+  background:
+    radial-gradient(circle at 18% 10%, var(--bg-glow), transparent 45%),
+    var(--bg);
+  color: var(--text);
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* OS 다크모드 색상 반전 방지 */
-  color-scheme: only light;
+  /* file-select-view는 OS 테마를 따르되, transmit-view는 아래에서 강제 라이트 처리 */
+  color-scheme: light dark;
 }
 
 /* ─────────────────────────────────────────────
@@ -35,35 +78,91 @@ body {
    ───────────────────────────────────────────── */
 
 #file-select-view {
-  text-align: center;
   width: 100%;
-  max-width: 500px;
+  max-width: 460px;
   padding: 24px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding: 0 4px;
+}
+
+.brand-mark {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+
+.brand-mark::after {
+  content: '';
+  position: absolute;
+  inset: 11px;
+  border-radius: 5px;
+  background: var(--accent-contrast);
+  opacity: 0.9;
+}
+
+.brand-text h1 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.brand-text p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* 카드 컨테이너 */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 28px;
 }
 
 /* 드롭존 */
 #drop-zone {
-  border: 2px dashed #555;
-  border-radius: 12px;
-  padding: 60px 80px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-md);
+  padding: 48px 32px;
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
   user-select: none;
+  color: var(--text-muted);
 }
 
 #drop-zone:hover {
-  border-color: #888;
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 #drop-zone.dragover {
-  border-color: #fff;
-  background: #333;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: scale(1.01);
+}
+
+.drop-icon {
+  color: var(--accent);
+  margin-bottom: 12px;
 }
 
 #drop-zone p {
-  margin-bottom: 16px;
-  color: #aaa;
-  font-size: 1rem;
+  margin-bottom: 18px;
+  color: var(--text-muted);
+  font-size: 0.95rem;
 }
 
 /* ─────────────────────────────────────────────
@@ -72,32 +171,40 @@ body {
 
 #file-btn,
 #start-btn {
-  background: #fff;
-  color: #000;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: var(--accent-contrast);
   border: none;
-  padding: 12px 32px;
-  border-radius: 8px;
+  padding: 12px 30px;
+  border-radius: 999px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  margin-top: 16px;
-  transition: opacity 0.2s, transform 0.1s;
+  font-family: inherit;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s;
 }
 
 #file-btn:hover,
 #start-btn:hover {
-  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(217, 119, 87, 0.28);
 }
 
 #file-btn:active,
 #start-btn:active {
-  transform: scale(0.98);
+  transform: translateY(0) scale(0.98);
+}
+
+#start-btn {
+  width: 100%;
+  margin-top: 20px;
 }
 
 #start-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.55;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 /* ─────────────────────────────────────────────
@@ -106,53 +213,81 @@ body {
 
 #file-info {
   margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.file-info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.file-icon {
+  flex: none;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  width: 38px;
+  height: 38px;
+}
+
+.file-info-text {
+  min-width: 0;
+  flex: 1;
 }
 
 #file-name {
   display: block;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  word-break: break-all;
-  margin: 8px 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-#file-size {
-  display: block;
-  color: #aaa;
-  font-size: 0.9rem;
-  margin-bottom: 4px;
+.file-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
 
-#est-time {
-  display: block;
-  color: #888;
-  font-size: 0.85rem;
-  margin-bottom: 16px;
+#est-time::before {
+  content: '·';
+  margin-right: 8px;
 }
 
 /* ─────────────────────────────────────────────
    화면 2: 전송 뷰
+   (카메라 인식을 위해 항상 순백 배경 — 고정값 사용, 변수 사용 금지)
    ───────────────────────────────────────────── */
+
+/* ID 선택자가 [hidden](attribute selector)보다 우선순위가 높아 JS의
+   el.hidden = true 가 무시되던 버그 수정 — hidden 상태일 때는 반드시 display:none */
+#transmit-view[hidden] {
+  display: none;
+}
 
 #transmit-view {
   position: relative;
   width: 100vw;
   height: 100vh;
-  /* 배경: 순백 (OS 다크모드 무관) */
   background: #ffffff;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
 }
 
-/* QR 격자 캔버스 */
+/* QR 격자 캔버스 — 아래 툴바(#controls) 높이만큼 자동으로 줄어들어
+   QR 콘텐츠나 fiducial 마커가 컨트롤에 가려지지 않는다 */
 #qr-canvas {
   display: block;
-  /* 캔버스는 JS에서 devicePixelRatio 기준 크기 설정 */
   width: 100vw;
-  height: 100vh;
+  flex: 1 1 auto;
+  min-height: 0; /* flex 자식이 내용 크기로 밀리지 않도록 */
   /* 배경 순백, 모듈 순흑 — OS 색상 반전 방지 */
   background: #ffffff;
   image-rendering: pixelated; /* 확대 시 픽셀 선명하게 */
@@ -160,42 +295,77 @@ body {
 }
 
 /* ─────────────────────────────────────────────
-   전송 컨트롤 버튼
+   전송 컨트롤 툴바
+   QR 캔버스 "아래"에 위치한 고정 높이 영역 — 그리드/fiducial과 겹치지 않음
    ───────────────────────────────────────────── */
 
 #controls {
-  position: absolute;
-  bottom: 20px;
+  flex: none;
   display: flex;
-  gap: 12px;
-  z-index: 10;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: #fafaf7;
+  border-top: 1px solid #ece7da;
 }
 
 #controls button {
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 8px 20px;
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  color: #2b2621;
+  border: 1px solid #e3ded1;
+  padding: 9px 20px;
+  border-radius: 999px;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: background 0.2s;
-  backdrop-filter: blur(4px);
+  font-size: 0.88rem;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
 }
 
-#controls button:hover {
-  background: rgba(0, 0, 0, 0.85);
+.btn-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+#controls button:hover:not(:disabled) {
+  border-color: #d97757;
+  background: rgba(217, 119, 87, 0.06);
+}
+
+#controls button:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 #controls button:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 /* PiP 활성 상태 표시 */
 #pip-btn.pip-active {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: #d97757;
+  border-color: #d97757;
+  color: #fffaf6;
+}
+
+#pip-btn.pip-active:hover {
+  background: #c2643f;
+  border-color: #c2643f;
+}
+
+#stop-btn {
+  color: #b5493a;
+  border-color: #f0d9d2;
+}
+
+#stop-btn:hover:not(:disabled) {
+  background: rgba(197, 73, 53, 0.08);
+  border-color: #c54935;
 }
 
 /* ─────────────────────────────────────────────
@@ -204,15 +374,15 @@ body {
 
 #visibility-hint {
   position: absolute;
-  top: 20px;
-  background: rgba(255, 200, 0, 0.95);
-  color: #000;
-  padding: 8px 20px;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  top: 24px;
+  background: #d97757;
+  color: #fffaf6;
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-size: 0.88rem;
   font-weight: 600;
   z-index: 10;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 20px rgba(217, 119, 87, 0.35);
 }
 
 /* ─────────────────────────────────────────────
@@ -220,13 +390,17 @@ body {
    ───────────────────────────────────────────── */
 
 @media (max-width: 480px) {
+  .card {
+    padding: 20px;
+  }
+
   #drop-zone {
-    padding: 40px 32px;
+    padding: 36px 20px;
   }
 
   #file-btn,
   #start-btn {
     padding: 10px 24px;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
 }

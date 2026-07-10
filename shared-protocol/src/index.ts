@@ -37,3 +37,6 @@ export * from './lt-encoder.js';
 
 // LT 디코더 (LtDecoder 클래스)
 export * from './lt-decoder.js';
+
+// QR 채널용 ASCII-safe 인코딩 (Base64) — BarcodeDetector의 UTF-8 강제 디코딩 우회
+export * from './qr-safe.js';

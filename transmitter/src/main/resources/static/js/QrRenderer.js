@@ -17,6 +17,7 @@
 "use strict";
 
 import { createQrCanvas, calcModuleSize } from './qr-encoder.js';
+import { toAsciiSafe } from './shared-protocol/index.js';
 
 export class QrRenderer {
 
@@ -31,15 +32,20 @@ export class QrRenderer {
    * @param {number} h 셀 높이 (실제 픽셀)
    */
   renderToCanvas(ctx, symbolBytes, x, y, w, h) {
+    // ASCII-safe(Base64) 인코딩: Android BarcodeDetector가 rawValue를 UTF-8로
+    // 강제 디코딩하는 과정에서 0x80 이상 바이트가 손상되는 것을 방지 (경로 A 대응).
+    // QR에는 이 인코딩된 바이트를 싣고, 수신측에서 decodeSymbol() 전에 원복한다.
+    const safeBytes = toAsciiSafe(symbolBytes);
+
     // 모듈당 픽셀 크기를 셀 크기에 맞게 계산 (정수).
     // 셀 픽셀 전체를 모듈 크기로 넘기면 수천 px짜리 OffscreenCanvas가 생성되어
     // 메모리·프레임 드롭을 유발하므로 반드시 모듈 단위로 환산한다.
-    const moduleSize = calcModuleSize(symbolBytes, w, h);
+    const moduleSize = calcModuleSize(safeBytes, w, h);
 
     // OffscreenCanvas로 QR 생성 (모듈당 moduleSize px)
     let qrCanvas;
     try {
-      qrCanvas = createQrCanvas(symbolBytes, moduleSize);
+      qrCanvas = createQrCanvas(safeBytes, moduleSize);
     } catch (e) {
       // QR 생성 실패 시 (데이터 너무 큼 등) 빈 흰 셀로 대체
       console.warn('[QrRenderer] QR 생성 실패:', e.message);

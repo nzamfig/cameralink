@@ -1,17 +1,20 @@
 /**
  * 파일 목적: 네이티브 BarcodeDetector API를 이용한 QR 디코딩 (경로 A)
- * 책임: 프레임 내 다중 QR을 한 번에 검출, rawValue를 Latin-1 역변환으로 바이트 복원
+ * 책임: 프레임 내 다중 QR을 한 번에 검출, rawValue를 바이트로 복원
  * 관계: ReceivePipeline에서 BarcodeDetector 지원 기기에서 우선 선택됨
  *
- * Latin-1(ISO-8859-1) 역변환이 필요한 이유:
- * BarcodeDetector.detect()의 rawValue는 문자열이므로, QR 바이너리 모드 데이터를
- * 바이트로 복원하려면 각 문자의 code point를 1:1로 바이트로 변환해야 함.
- * QR 바이너리 모드는 8비트 데이터이고, Latin-1은 코드포인트 0~255가 바이트값과 1:1
- * 대응하므로 이 왕복이 무손실임. (UTF-8 TextEncoder를 쓰면 0x80 이상이 2바이트로 확장되어 손상)
+ * rawValue 복원 2단계:
+ * 1. Latin-1(ISO-8859-1) 역변환: rawValue(문자열)의 각 code point를 1:1로 바이트로 변환.
+ * 2. ASCII-safe(Base64) 디코딩: Android의 BarcodeDetector 구현은 rawValue를 만들 때
+ *    내부적으로 UTF-8로 디코딩하는 것으로 보여, 0x80 이상 바이트가 섞인 원본은 네이티브
+ *    레이어에서 이미 손상되어 1단계만으로는 복구 불가능하다. 송신기가 QR에 Base64(ASCII
+ *    0~127)로 인코딩해서 싣기 때문에, 이 경로에서도 fromAsciiSafe()로 원복해야 한다.
  *
  * 지원 환경: Chrome 83+, Android WebView, Samsung Internet
  * 미지원: Firefox, iOS Safari (→ 경로 B로 폴백)
  */
+
+import { fromAsciiSafe } from 'shared-protocol/qr-safe';
 
 /** BarcodeDetector 전역 타입 (TypeScript 라이브러리 미포함) */
 interface BarcodeDetectorLike {
@@ -53,14 +56,20 @@ export class BarcodeDetectorDecoder {
 
   /**
    * 프레임에서 모든 QR 코드 검출.
-   * rawValue를 Latin-1 역변환으로 원시 바이트로 복원.
+   * rawValue를 Latin-1 역변환 후 Base64 디코딩하여 원본 심볼 바이트로 복원.
    * @param imageData 분석할 프레임 ImageData
-   * @returns 각 QR의 바이트 배열 목록 (빈 목록이면 QR 없음)
+   * @returns 각 QR의 바이트 배열 목록 (빈 목록이면 QR 없음, 손상된 읽기는 제외됨)
    */
   async detect(imageData: ImageData): Promise<Uint8Array[]> {
     if (!this.detector) throw new Error('BarcodeDetectorDecoder.init() 미호출');
     const results = await this.detector.detect(imageData);
-    return results.map(r => latin1ToBytes(r.rawValue));
+
+    const bytesList: Uint8Array[] = [];
+    for (const r of results) {
+      const decoded = fromAsciiSafe(latin1ToBytes(r.rawValue));
+      if (decoded) bytesList.push(decoded);
+    }
+    return bytesList;
   }
 }
 
