@@ -1,0 +1,17 @@
+# 송신기 서버 설정
+# 보안: 127.0.0.1 바인딩으로 LAN/외부 네트워크 노출 완전 차단
+server:
+  address: 127.0.0.1
+  port: 8080
+
+spring:
+  servlet:
+    multipart:
+      # 파일 업로드 크기 상한 — 초과 시 클라이언트에 413 오류 반환
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+logging:
+  level:
+    # 송신기 패키지 로그 레벨: 개발 중 DEBUG, 운영 시 INFO로 변경
+    com.cameralink: DEBUG

@@ -1,0 +1,232 @@
+/**
+ * @file style.css
+ * @description CameraLink 송신기 UI 스타일.
+ * 최소한의 스타일로 파일 선택 화면과 전송 화면을 구성한다.
+ * OS 다크모드에 영향받지 않도록 배경과 전경색을 명시적으로 지정한다.
+ *
+ * 관계:
+ *   index.html → <link rel="stylesheet"> 로 참조
+ */
+
+/* ─────────────────────────────────────────────
+   리셋 및 기본 설정
+   ───────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #1a1a1a;
+  color: #fff;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* OS 다크모드 색상 반전 방지 */
+  color-scheme: only light;
+}
+
+/* ─────────────────────────────────────────────
+   화면 1: 파일 선택 뷰
+   ───────────────────────────────────────────── */
+
+#file-select-view {
+  text-align: center;
+  width: 100%;
+  max-width: 500px;
+  padding: 24px;
+}
+
+/* 드롭존 */
+#drop-zone {
+  border: 2px dashed #555;
+  border-radius: 12px;
+  padding: 60px 80px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  user-select: none;
+}
+
+#drop-zone:hover {
+  border-color: #888;
+}
+
+#drop-zone.dragover {
+  border-color: #fff;
+  background: #333;
+}
+
+#drop-zone p {
+  margin-bottom: 16px;
+  color: #aaa;
+  font-size: 1rem;
+}
+
+/* ─────────────────────────────────────────────
+   공통 버튼
+   ───────────────────────────────────────────── */
+
+#file-btn,
+#start-btn {
+  background: #fff;
+  color: #000;
+  border: none;
+  padding: 12px 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 16px;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+#file-btn:hover,
+#start-btn:hover {
+  opacity: 0.9;
+}
+
+#file-btn:active,
+#start-btn:active {
+  transform: scale(0.98);
+}
+
+#start-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ─────────────────────────────────────────────
+   파일 정보 영역
+   ───────────────────────────────────────────── */
+
+#file-info {
+  margin-top: 24px;
+}
+
+#file-name {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  word-break: break-all;
+  margin: 8px 0 4px;
+}
+
+#file-size {
+  display: block;
+  color: #aaa;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+#est-time {
+  display: block;
+  color: #888;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+/* ─────────────────────────────────────────────
+   화면 2: 전송 뷰
+   ───────────────────────────────────────────── */
+
+#transmit-view {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  /* 배경: 순백 (OS 다크모드 무관) */
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* QR 격자 캔버스 */
+#qr-canvas {
+  display: block;
+  /* 캔버스는 JS에서 devicePixelRatio 기준 크기 설정 */
+  width: 100vw;
+  height: 100vh;
+  /* 배경 순백, 모듈 순흑 — OS 색상 반전 방지 */
+  background: #ffffff;
+  image-rendering: pixelated; /* 확대 시 픽셀 선명하게 */
+  image-rendering: crisp-edges;
+}
+
+/* ─────────────────────────────────────────────
+   전송 컨트롤 버튼
+   ───────────────────────────────────────────── */
+
+#controls {
+  position: absolute;
+  bottom: 20px;
+  display: flex;
+  gap: 12px;
+  z-index: 10;
+}
+
+#controls button {
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+  backdrop-filter: blur(4px);
+}
+
+#controls button:hover {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+#controls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* PiP 활성 상태 표시 */
+#pip-btn.pip-active {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ─────────────────────────────────────────────
+   가시성 경고 배너
+   ───────────────────────────────────────────── */
+
+#visibility-hint {
+  position: absolute;
+  top: 20px;
+  background: rgba(255, 200, 0, 0.95);
+  color: #000;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ─────────────────────────────────────────────
+   반응형 조정
+   ───────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  #drop-zone {
+    padding: 40px 32px;
+  }
+
+  #file-btn,
+  #start-btn {
+    padding: 10px 24px;
+    font-size: 0.95rem;
+  }
+}

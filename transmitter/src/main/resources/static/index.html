@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<!--
+  @file index.html
+  @description CameraLink 송신기 메인 HTML.
+  Spring Boot 정적 리소스로 서빙되며 별도 빌드 없이 ES 모듈로 동작한다.
+
+  화면 1: #file-select-view — 파일 선택 (드래그&드롭 + 버튼)
+  화면 2: #transmit-view    — QR 격자 애니메이션 전송
+
+  관계:
+    css/style.css  → 스타일
+    js/main.js     → ES 모듈 진입점 (type="module")
+    Spring Boot    → localhost:8080에서 서빙
+-->
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- OS 다크모드가 QR 색상을 반전하지 않도록 강제 라이트 모드 -->
+  <meta name="color-scheme" content="light">
+  <title>CameraLink — 광학 파일 전송</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ─────────────────────────────────────────────
+       화면 1: 파일 선택
+       ───────────────────────────────────────────── -->
+  <div id="file-select-view">
+
+    <!-- 드래그&드롭 영역 -->
+    <div id="drop-zone">
+      <p>파일을 여기에 드래그하거나</p>
+      <button id="file-btn" type="button">파일 선택</button>
+      <!-- hidden input: 파일 다이얼로그 트리거용 -->
+      <input type="file" id="file-input" hidden aria-label="파일 선택">
+    </div>
+
+    <!-- 파일 선택 후 표시되는 정보 패널 -->
+    <div id="file-info" hidden>
+      <span id="file-name" aria-label="파일명"></span>
+      <span id="file-size" aria-label="파일 크기"></span>
+      <span id="est-time"  aria-label="예상 전송 시간"></span>
+      <button id="start-btn" type="button">전송 시작</button>
+    </div>
+
+  </div>
+
+  <!-- ─────────────────────────────────────────────
+       화면 2: 전송 애니메이션
+       ───────────────────────────────────────────── -->
+  <div id="transmit-view" hidden>
+
+    <!-- QR 격자 캔버스 — GridRenderer가 렌더링 -->
+    <canvas id="qr-canvas" aria-label="QR 코드 전송 화면"></canvas>
+
+    <!-- 창이 숨겨졌을 때 경고 배너 -->
+    <div id="visibility-hint" hidden role="alert">
+      창을 보이도록 유지하세요 — 숨겨지면 전송이 중단됩니다
+    </div>
+
+    <!-- 전송 제어 버튼 -->
+    <div id="controls" role="toolbar" aria-label="전송 제어">
+      <button id="pip-btn" type="button" title="항상 위 창으로 전환 (Chrome 116+ 필요)">
+        항상 위 (PiP)
+      </button>
+      <button id="stop-btn" type="button" title="전송 중지 (ESC)">
+        중지
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ES 모듈 진입점 — type="module"로 임포트 체인 시작 -->
+  <script type="module" src="js/main.js"></script>
+
+</body>
+</html>

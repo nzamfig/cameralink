@@ -1,0 +1,24 @@
+# Node
+node_modules/
+
+# 빌드 산출물
+shared-protocol/dist/
+receiver-pwa/dist/
+
+# Gradle
+transmitter/.gradle/
+transmitter/build/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+Thumbs.db
+.DS_Store
+
+# 로그
+*.log
+
+# Claude Code 로컬 설정 (개인 권한 목록 — 공유 불필요)
+.claude/settings.local.json
+claude-code-prompt.md

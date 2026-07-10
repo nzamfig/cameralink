@@ -1,0 +1,26 @@
+/**
+ * 송신기(transmitter) 빌드 스크립트.
+ * Spring Boot 3.2.0 + Java 17 기반 멀티파트 파일 업로드 및 LT 인코딩 서버.
+ * 정적 리소스(HTML/CSS/JS)를 함께 서빙하므로 별도 프론트 빌드 불필요.
+ */
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.3'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.cameralink'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}

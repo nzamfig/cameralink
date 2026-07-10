@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CameraLink 수신기</title>
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="/cameralink/manifest.webmanifest">
+  <style>
+    /* 기본 리셋 */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #000; color: #fff; font-family: sans-serif; height: 100dvh; overflow: hidden; }
+    /* 뷰 전환 */
+    .view { display: none; width: 100%; height: 100%; }
+    .view.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  </style>
+</head>
+<body>
+  <!-- 시작 뷰 -->
+  <div id="start-view" class="view active">
+    <h1>CameraLink</h1>
+    <p id="install-hint" style="display:none;margin:16px 0;font-size:0.85em;color:#aaa">
+      홈 화면에 추가하면 오프라인에서도 사용할 수 있습니다
+    </p>
+    <button id="camera-btn" style="margin-top:24px;padding:16px 40px;font-size:1.1rem;border-radius:12px;border:none;background:#fff;color:#000;cursor:pointer">
+      카메라 시작
+    </button>
+    <p id="error-msg" style="display:none;margin-top:16px;color:#f66"></p>
+  </div>
+
+  <!-- 수신 뷰 -->
+  <div id="receive-view" class="view" style="position:relative;">
+    <video id="camera-video" autoplay playsinline muted style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></video>
+    <canvas id="overlay-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
+    <!-- 진행률 바 -->
+    <div id="progress-bar" style="position:absolute;bottom:0;left:0;height:6px;background:#0f0;width:0%;transition:width 0.2s;"></div>
+    <div id="progress-text" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:1.1rem;font-weight:bold;text-shadow:0 0 4px #000;">0%</div>
+    <!-- 조준 힌트 -->
+    <div id="aim-hint" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);padding:8px 20px;border-radius:20px;font-size:0.9rem;"></div>
+  </div>
+
+  <!-- 완료 뷰 -->
+  <div id="result-view" class="view">
+    <p style="font-size:1.2rem;margin-bottom:24px;">&#10003; 수신 완료</p>
+    <p id="result-filename" style="color:#aaa;margin-bottom:32px;"></p>
+    <button id="save-btn" style="padding:16px 40px;font-size:1.1rem;border-radius:12px;border:none;background:#0f0;color:#000;cursor:pointer;font-weight:bold;">
+      저장
+    </button>
+    <button id="restart-btn" style="margin-top:16px;padding:8px 20px;border-radius:8px;border:1px solid #555;background:transparent;color:#fff;cursor:pointer;">
+      다시 수신
+    </button>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "cameralink",
+  "version": "1.0.0",
+  "private": true,
+  "description": "격자 QR 광학 파일 전송 시스템 — 루트 오케스트레이션 스크립트",
+  "scripts": {
+    "build:protocol": "npm run build --prefix shared-protocol",
+    "test:protocol": "npm test --prefix shared-protocol",
+    "sync:transmitter": "npm run build:protocol && node scripts/sync-protocol.mjs",
+    "check:sync": "npm run build:protocol && node scripts/sync-protocol.mjs --check",
+    "typecheck:receiver": "npm run typecheck --prefix receiver-pwa",
+    "build:receiver": "npm run build --prefix receiver-pwa",
+    "test": "npm run test:protocol && npm run typecheck:receiver && npm run check:sync"
+  }
+}
