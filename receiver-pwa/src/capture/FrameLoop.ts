@@ -62,6 +62,11 @@ export class FrameLoop {
           const imageData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
           await this.onFrame(imageData);
         }
+      } catch (err) {
+        // onFrame 예외(예: BarcodeDetector 네이티브 모듈이 아직 준비되지 않아 detect()가
+        // reject하는 경우)를 여기서 삼키지 않으면 아래 scheduleNext()가 스킵되어
+        // 루프가 그 프레임에서 영구히 멈춘다. 다음 프레임에서 재시도할 수 있도록 로그만 남긴다.
+        console.error('[FrameLoop] 프레임 처리 실패, 다음 프레임에서 재시도:', err);
       } finally {
         this.processing = false;
       }
