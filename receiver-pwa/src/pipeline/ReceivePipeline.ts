@@ -395,7 +395,10 @@ export class ReceivePipeline {
    */
   async focusAt(nx: number, ny: number): Promise<void> {
     this.emitHint('초점을 맞추는 중입니다...');
-    await this.camera.focusAt(nx, ny);
+    const report = await this.camera.focusAt(nx, ny);
+    // alert()로 노출: 힌트 바는 프레임 루프가 매 프레임 덮어써서 진단 문구가
+    // 표시되자마자 사라진다 (실기기별 초점 API 지원 여부를 확인하려면 확실히 봐야 함).
+    alert(`초점 진단: ${report}`);
     this.emitHint('카메라를 QR 격자에 맞춰주세요 (화면을 탭하면 그 위치에 초점을 맞춥니다)');
   }
 

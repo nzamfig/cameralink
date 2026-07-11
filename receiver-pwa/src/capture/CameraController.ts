@@ -56,16 +56,21 @@ export class CameraController {
    * (실기기 테스트에서 확인) — 그래서 탭한 순간의 초점을 고정해 유지한다.
    * pointsOfInterest·manual 초점 미지원 기기에서는 조용히 무시하고 연속초점 유지.
    */
-  async focusAt(nx: number, ny: number): Promise<void> {
+  async focusAt(nx: number, ny: number): Promise<string> {
     const track = this.stream?.getVideoTracks()[0];
-    if (!track) return;
+    if (!track) return '트랙 없음';
+
+    const capabilities = track.getCapabilities?.() as MediaTrackCapabilities & {
+      focusMode?: string[];
+      pointsOfInterest?: unknown;
+    };
+
+    // 진단용: 이 기기의 브라우저가 실제로 무엇을 지원하는지 그대로 보고한다.
+    // 초점 제어(pointsOfInterest·manual focusMode)는 표준에 있어도 실기기/브라우저
+    // 지원이 매우 들쭉날쭉해서, 조용히 무시하는 대신 무엇이 없어서 안 되는지 알아야 한다.
+    const report = `focusMode=${JSON.stringify(capabilities?.focusMode ?? null)} poi=${!!capabilities?.pointsOfInterest}`;
 
     try {
-      const capabilities = track.getCapabilities?.() as MediaTrackCapabilities & {
-        focusMode?: string[];
-        pointsOfInterest?: unknown;
-      };
-
       const advanced: MediaTrackConstraintSet[] = [];
       if (capabilities?.pointsOfInterest) {
         advanced.push({ pointsOfInterest: [{ x: nx, y: ny }] } as MediaTrackConstraintSet);
@@ -75,7 +80,7 @@ export class CameraController {
       } else if (capabilities?.focusMode?.includes('continuous')) {
         advanced.push({ focusMode: 'continuous' } as MediaTrackConstraintSet);
       }
-      if (advanced.length === 0) return; // 탭 초점 미지원 기기
+      if (advanced.length === 0) return `미지원 (${report})`;
 
       await track.applyConstraints({ advanced });
 
@@ -83,15 +88,16 @@ export class CameraController {
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       // 그 순간의 초점 거리로 고정 (manual 미지원 기기는 조용히 무시하고 연속초점 유지)
-      const capabilities2 = track.getCapabilities?.() as MediaTrackCapabilities & { focusMode?: string[] };
       const settings = track.getSettings?.() as MediaTrackSettings & { focusDistance?: number };
-      if (capabilities2?.focusMode?.includes('manual') && settings?.focusDistance !== undefined) {
+      if (capabilities?.focusMode?.includes('manual') && settings?.focusDistance !== undefined) {
         await track.applyConstraints({
           advanced: [{ focusMode: 'manual', focusDistance: settings.focusDistance } as MediaTrackConstraintSet]
         });
+        return `고정됨 d=${settings.focusDistance} (${report})`;
       }
-    } catch {
-      // 탭 초점 실패: 조용히 무시하고 연속초점 유지
+      return `manual 미지원, 연속초점 유지 (${report})`;
+    } catch (err) {
+      return `실패: ${err instanceof Error ? err.message : String(err)} (${report})`;
     }
   }
 
