@@ -37,8 +37,12 @@ public class FileEncoderService {
 
     private static final Logger log = LoggerFactory.getLogger(FileEncoderService.class);
 
-    /** 각 LT 심볼의 페이로드 크기(바이트) — shared-protocol의 PAYLOAD_SIZE와 동일 */
-    private static final int PAYLOAD_SIZE = 200;
+    /**
+     * 각 LT 심볼의 페이로드 크기(바이트) — shared-protocol의 PAYLOAD_SIZE와 반드시 동일해야 함.
+     * (자동 동기화 대상이 아닌 수동 복제값이므로 shared-protocol/src/constants.ts 변경 시 함께 수정할 것 —
+     *  값이 어긋나면 헤더가 광고하는 payloadSize와 실제 블록 크기가 달라져 수신이 전부 실패한다)
+     */
+    private static final int PAYLOAD_SIZE = 145;
 
     /** 파일명 최대 UTF-8 바이트 수 — 헤더 심볼 QR 용량 초과 방지 */
     private static final int FILENAME_MAX_BYTES = 100;

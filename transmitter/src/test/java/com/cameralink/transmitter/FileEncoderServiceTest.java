@@ -86,10 +86,10 @@ class FileEncoderServiceTest {
     // ─────────────────────────────────────────────
 
     @Test
-    @DisplayName("storedData 디코딩 후 길이 = totalBlocks × 200")
+    @DisplayName("storedData 디코딩 후 길이 = totalBlocks × 145")
     void encode_storedData_paddedToBlockBoundary() throws IOException {
-        // 정확히 PAYLOAD_SIZE(200) 배수가 아닌 크기 사용
-        byte[] data = new byte[450]; // 450B → ceil(450/200) = 3블록 → 패딩 후 600B
+        // 정확히 PAYLOAD_SIZE(145) 배수가 아닌 크기 사용
+        byte[] data = new byte[450]; // 450B → ceil(450/145) = 4블록 → 패딩 후 580B
         for (int i = 0; i < data.length; i++) data[i] = (byte) i;
 
         MockMultipartFile file = new MockMultipartFile(
@@ -101,14 +101,14 @@ class FileEncoderServiceTest {
         byte[] decoded = Base64.getDecoder().decode(response.getStoredData());
         assertEquals(response.getTotalBlocks() * response.getPayloadSize(), decoded.length,
                 "storedData 길이는 totalBlocks × payloadSize여야 한다");
-        assertEquals(200, response.getPayloadSize(), "payloadSize는 항상 200이어야 한다");
+        assertEquals(145, response.getPayloadSize(), "payloadSize는 항상 145여야 한다");
     }
 
     @Test
-    @DisplayName("정확히 200바이트 배수 파일 — 패딩 없이 그대로")
+    @DisplayName("정확히 145바이트 배수 파일 — 패딩 없이 그대로")
     void encode_exactBlockMultiple_noPadding() throws IOException {
-        // 정확히 200B → 1블록, 패딩 없음
-        byte[] data = new byte[200];
+        // 정확히 145B → 1블록, 패딩 없음
+        byte[] data = new byte[145];
         MockMultipartFile file = new MockMultipartFile(
                 "file", "exact.bin", "application/octet-stream", data);
 
@@ -116,8 +116,8 @@ class FileEncoderServiceTest {
 
         // compressed 여부에 상관없이 블록 수와 storedData 길이 확인
         byte[] decoded = Base64.getDecoder().decode(response.getStoredData());
-        assertEquals(response.getTotalBlocks() * 200, decoded.length,
-                "패딩 후 길이는 totalBlocks × 200이어야 한다");
+        assertEquals(response.getTotalBlocks() * 145, decoded.length,
+                "패딩 후 길이는 totalBlocks × 145여야 한다");
     }
 
     // ─────────────────────────────────────────────
@@ -221,7 +221,7 @@ class FileEncoderServiceTest {
         assertNotNull(response.getFilename());
         assertTrue(response.getOriginalSize() > 0);
         assertTrue(response.getStoredSize() > 0);
-        assertEquals(200, response.getPayloadSize());
+        assertEquals(145, response.getPayloadSize());
         assertTrue(response.getTotalBlocks() > 0);
         assertNotNull(response.getCrc32());
         assertNotNull(response.getStoredData());

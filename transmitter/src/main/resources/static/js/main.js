@@ -33,7 +33,7 @@ import { EncodeClient }   from './EncodeClient.js';
 import { GridRenderer }   from './GridRenderer.js';
 import { LayoutManager }  from './LayoutManager.js';
 import { PipController }  from './PipController.js';
-import { LtEncoder, PAYLOAD_SIZE } from './shared-protocol/index.js';
+import { LtEncoder } from './shared-protocol/index.js';
 
 // ─────────────────────────────────────────────
 // DOM 요소 참조
@@ -93,12 +93,16 @@ async function onFileSelected(file) {
     // grid 바이트는 프레임마다 달라질 수 있으므로 여기서 직렬화하지 않고
     // GridRenderer가 현재 레이아웃의 gridByte로 매번 인코딩한다.
     // crc32는 서버에서 16진수 문자열로 반환 → 정수로 변환
+    // payloadSize는 반드시 서버가 실제로 블록을 분할한 값(encodeData.payloadSize)을 그대로 써야 한다.
+    // 프론트엔드 shared-protocol의 PAYLOAD_SIZE 상수를 따로 쓰면, 서버(Java, 수동 복제값)와
+    // 값이 어긋날 때 헤더가 광고하는 payloadSize와 실제 심볼 payload 길이가 달라져
+    // 수신기 LtDecoder가 전부 실패한다.
     const headerMeta = {
       flags:        encodeData.compressed ? 0x01 : 0x00,  // bit0 = gzip 여부
       filename:     encodeData.filename,
       originalSize: encodeData.originalSize,
       storedSize:   encodeData.storedSize,
-      payloadSize:  PAYLOAD_SIZE,
+      payloadSize:  encodeData.payloadSize,
       totalBlocks:  encodeData.totalBlocks,
       crc32:        parseInt(encodeData.crc32, 16),
     };

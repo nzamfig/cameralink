@@ -48,6 +48,34 @@ export class CameraController {
   }
 
   /**
+   * 연속 자동초점이 수렴시킨 현재 초점 거리로 고정(manual)한다.
+   * 애니메이션 QR 격자처럼 내용이 계속 바뀌는 대상을 비추면 연속 자동초점이
+   * 매 프레임 다시 초점을 찾으려다 실패해 계속 흐릿한 상태가 되는 기기가 있음
+   * (실기기 테스트에서 확인). 정적인 화면을 잠깐 비추게 한 뒤 이 메서드로
+   * 그 순간의 초점 거리를 고정하면 이후 애니메이션 중에는 초점이 흔들리지 않는다.
+   * focusDistance manual 모드 미지원 기기는 조용히 무시하고 연속초점 유지.
+   */
+  async lockFocus(): Promise<void> {
+    const track = this.stream?.getVideoTracks()[0];
+    if (!track) return;
+
+    try {
+      const capabilities = track.getCapabilities?.() as MediaTrackCapabilities & { focusMode?: string[]; focusDistance?: { min: number; max: number; step: number } };
+      const settings = track.getSettings?.() as MediaTrackSettings & { focusDistance?: number };
+
+      if (!capabilities?.focusMode?.includes('manual') || settings?.focusDistance === undefined) {
+        return; // manual 초점 미지원 — 연속초점 유지
+      }
+
+      await track.applyConstraints({
+        advanced: [{ focusMode: 'manual', focusDistance: settings.focusDistance } as MediaTrackConstraintSet]
+      });
+    } catch {
+      // 초점 고정 실패: 조용히 무시하고 연속초점 유지
+    }
+  }
+
+  /**
    * 카메라 스트림 정지 및 자원 해제.
    * Wake Lock도 함께 해제하여 배터리 소모를 줄임.
    */

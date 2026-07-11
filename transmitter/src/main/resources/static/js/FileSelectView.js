@@ -7,7 +7,7 @@
  * 예상 전송 시간 계산:
  *   서버 응답 전이므로 원본 파일 크기 기준 추정:
  *   totalCells = DEFAULT_GRID^2 = 16 (최대)
- *   throughput = DEFAULT_FPS × PAYLOAD_SIZE × totalCells = 10 × 200 × 16 = 32,000 B/s
+ *   throughput = DEFAULT_FPS × PAYLOAD_SIZE × totalCells = 10 × 145 × 16 = 23,200 B/s
  *   estimatedSeconds = originalSize / throughput
  *   (실제 압축·격자 크기에 따라 달라지므로 "약 N초" 표시)
  *

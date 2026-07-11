@@ -29,7 +29,7 @@ public class EncodeResponse {
     /** gzip 압축 적용 여부 (압축 후가 원본보다 작을 때만 true) */
     private boolean compressed;
 
-    /** 각 LT 심볼 페이로드 크기(바이트) — 항상 PAYLOAD_SIZE(200) */
+    /** 각 LT 심볼 페이로드 크기(바이트) — 항상 PAYLOAD_SIZE(145) */
     private int payloadSize;
 
     /** 총 소스 블록 수 = ceil(storedSize / payloadSize) */

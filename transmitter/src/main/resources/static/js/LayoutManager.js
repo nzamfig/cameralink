@@ -6,9 +6,11 @@
  *
  * 격자 계산 규칙:
  *   - 캔버스 4변에 FIDUCIAL_MARGIN 여백을 예약하고 남은 영역을 격자로 사용
- *   - cols = floor(가용너비 / MIN_CELL_PX), rows = floor(가용높이 / MIN_CELL_PX)
- *   - DEFAULT_GRID(4)를 상한으로 clamp
- *   - 최소 1×1, 0이면 null 반환
+ *   - cols/rows를 화면 가로세로 비율에 맞춰 독립적으로 배분해 셀이 "정사각형"에 가깝도록 함
+ *     (예전엔 cols·rows 둘 다 DEFAULT_GRID로 동일하게 clamp해서, 와이드 화면에서
+ *      cellW≫cellH인 직사각형 셀에 정사각형 QR을 넣다 보니 셀 좌우로 큰 흰 여백이 남았음)
+ *   - 총 셀 수(cols×rows)는 DEFAULT_GRID² 이하로 유지 (폰 디코드 성능 상한)
+ *   - 각 셀은 MIN_CELL_PX 이상, 최소 1×1, 공간 부족 시 null 반환
  *
  * Fiducial 마커:
  *   - 격자 "바깥" 여백의 4모서리에 속이 꽉 찬 원 배치
@@ -60,43 +62,68 @@ export class LayoutManager {
     const availW = W - FIDUCIAL_MARGIN * 2;
     const availH = H - FIDUCIAL_MARGIN * 2;
 
-    // 가능한 최대 격자 수 계산 (MIN_CELL_PX 기준)
-    let cols = Math.floor(availW / MIN_CELL_PX);
-    let rows = Math.floor(availH / MIN_CELL_PX);
-
-    // DEFAULT_GRID(4)를 상한으로 clamp
-    cols = Math.min(cols, DEFAULT_GRID);
-    rows = Math.min(rows, DEFAULT_GRID);
-
     // 공간 부족 시 null 반환
-    if (cols < 1 || rows < 1) return null;
+    if (availW < MIN_CELL_PX || availH < MIN_CELL_PX) return null;
 
-    // 셀 크기 계산 (정수 픽셀)
-    const cellW = Math.floor(availW / cols);
-    const cellH = Math.floor(availH / rows);
+    // MIN_CELL_PX 기준 각 축의 이론적 최대 격자 수 (셀이 이보다 작아지면 안 됨)
+    const idealCols = Math.floor(availW / MIN_CELL_PX);
+    const idealRows = Math.floor(availH / MIN_CELL_PX);
+
+    // 총 셀 수 상한 (폰 디코드 성능 고려, 기존 DEFAULT_GRID×DEFAULT_GRID와 동일)
+    const maxCells = DEFAULT_GRID * DEFAULT_GRID;
+
+    // 화면 가로세로 비율에 맞춰 cols/rows를 독립적으로 배분한다.
+    // (이전엔 cols·rows를 둘 다 DEFAULT_GRID로 동일하게 clamp했기 때문에, 와이드 화면에서
+    //  cellW≫cellH인 직사각형 셀이 나왔고 그 안에 들어가는 정사각형 QR 주변으로 여백이
+    //  크게 남았다. aspect ratio를 반영해 셀이 정사각형에 가깝도록 재분배한다.)
+    const aspect = availW / availH;
+    let cols = Math.max(1, Math.round(Math.sqrt(maxCells * aspect)));
+    let rows = Math.max(1, Math.round(maxCells / cols));
+
+    // 총 셀 수가 상한을 넘으면 더 긴 축부터 하나씩 줄여 상한 이내로 맞춘다
+    while (cols * rows > maxCells && (cols > 1 || rows > 1)) {
+      if (cols >= rows) cols--; else rows--;
+    }
+
+    // MIN_CELL_PX 제약 재적용 및 4비트 격자 바이트 범위(0~15) 안전 클램프
+    cols = Math.max(1, Math.min(cols, idealCols, 15));
+    rows = Math.max(1, Math.min(rows, idealRows, 15));
+
+    // 셀을 정사각형으로 렌더링: 가로/세로 중 더 빡빡한 쪽 기준 공통 크기 산정
+    const cellSize = Math.floor(Math.min(availW / cols, availH / rows));
+    const cellW = cellSize;
+    const cellH = cellSize;
+
+    // 격자 전체 크기가 가용 영역보다 작게 나올 수 있으므로 잔여 공간을 중앙 정렬로 분배
+    const gridW = cellW * cols;
+    const gridH = cellH * rows;
+    const offsetX = FIDUCIAL_MARGIN + Math.floor((availW - gridW) / 2);
+    const offsetY = FIDUCIAL_MARGIN + Math.floor((availH - gridH) / 2);
 
     // 셀 좌표 배열 구성 (row-major 순서: 위 → 아래, 왼 → 오른쪽)
-    // 여백만큼 안쪽으로 오프셋하여 fiducial과 겹치지 않게 함
     const cells = [];
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
         cells.push({
-          x: FIDUCIAL_MARGIN + col * cellW,
-          y: FIDUCIAL_MARGIN + row * cellH,
+          x: offsetX + col * cellW,
+          y: offsetY + row * cellH,
           w: cellW,
           h: cellH,
         });
       }
     }
 
-    // Fiducial 마커 위치: 격자 바깥 여백의 4모서리 (셀이 덮지 않는 영역)
+    // Fiducial 마커 위치: 실제 격자 바깥 여백의 4모서리 (셀이 덮지 않는 영역)
+    // 격자가 중앙 정렬로 오프셋될 수 있으므로 캔버스 고정 좌표가 아닌 격자 경계 기준으로 계산
     const r = FIDUCIAL_RADIUS;
-    const gridRight  = FIDUCIAL_MARGIN + cols * cellW;
-    const gridBottom = FIDUCIAL_MARGIN + rows * cellH;
+    const gridLeft   = offsetX;
+    const gridTop    = offsetY;
+    const gridRight  = offsetX + gridW;
+    const gridBottom = offsetY + gridH;
     const fiducials = [
-      { x: r + 4,             y: r + 4,              r }, // 좌상
-      { x: gridRight + r + 4, y: r + 4,              r }, // 우상
-      { x: r + 4,             y: gridBottom + r + 4, r }, // 좌하
+      { x: gridLeft  - r - 4, y: gridTop    - r - 4, r }, // 좌상
+      { x: gridRight + r + 4, y: gridTop    - r - 4, r }, // 우상
+      { x: gridLeft  - r - 4, y: gridBottom + r + 4, r }, // 좌하
       { x: gridRight + r + 4, y: gridBottom + r + 4, r }, // 우하
     ];
 
