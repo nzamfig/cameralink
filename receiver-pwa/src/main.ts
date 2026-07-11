@@ -41,6 +41,35 @@ function showView(viewId: 'start-view' | 'receive-view' | 'result-view'): void {
 }
 
 // ─────────────────────────────────────────────
+// 수신 뷰 엘리먼트 (정적 DOM — 뷰 전환은 CSS로만, 재생성되지 않음)
+// ─────────────────────────────────────────────
+
+const videoEl = document.getElementById('camera-video') as HTMLVideoElement;
+const overlayCanvas = document.getElementById('overlay-canvas') as HTMLCanvasElement;
+
+// 화면 탭 → 그 위치를 기준으로 초점 맞춤.
+// video는 object-fit:cover이므로 표시 영역과 실제 프레임 사이에 확대/크롭이 있어
+// 탭 좌표를 비디오 원본 해상도 기준 정규화 좌표(0~1)로 환산해야 한다.
+// videoEl은 재생성되지 않는 정적 엘리먼트이므로 리스너도 한 번만 등록한다
+// (onCameraClick 콜백 안에 두면 다시 수신할 때마다 중복 등록됨).
+videoEl.addEventListener('click', (evt) => {
+  if (!pipeline) return;
+  const vw = videoEl.videoWidth;
+  const vh = videoEl.videoHeight;
+  if (vw === 0 || vh === 0) return;
+
+  const rect = videoEl.getBoundingClientRect();
+  const scale = Math.max(rect.width / vw, rect.height / vh);
+  const cropX = (vw * scale - rect.width) / 2;
+  const cropY = (vh * scale - rect.height) / 2;
+
+  const nx = ((evt.clientX - rect.left) + cropX) / (vw * scale);
+  const ny = ((evt.clientY - rect.top) + cropY) / (vh * scale);
+
+  pipeline.focusAt(Math.min(1, Math.max(0, nx)), Math.min(1, Math.max(0, ny)));
+});
+
+// ─────────────────────────────────────────────
 // 시작 뷰 초기화
 // ─────────────────────────────────────────────
 
@@ -49,9 +78,6 @@ startView.show();
 startView.onCameraClick(async () => {
   // 카메라 시작: StartView → ReceiveView 전환
   showView('receive-view');
-
-  const videoEl = document.getElementById('camera-video') as HTMLVideoElement;
-  const overlayCanvas = document.getElementById('overlay-canvas') as HTMLCanvasElement;
 
   // 오버레이 캔버스 크기를 화면에 맞춤
   overlayCanvas.width = window.innerWidth;

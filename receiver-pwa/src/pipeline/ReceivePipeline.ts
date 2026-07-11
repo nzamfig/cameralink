@@ -89,14 +89,7 @@ export class ReceivePipeline {
     try {
       // 1. 카메라 시작
       await this.camera.start(this.videoEl);
-
-      // 1-1. 초점 고정: 연속 자동초점이 수렴할 시간을 준 뒤 그 거리로 고정.
-      // QR 애니메이션처럼 내용이 계속 바뀌는 대상을 비추면 연속초점이 매 프레임
-      // 다시 초점을 잡으려다 실패해 계속 흐릿해지는 기기가 있음 (실기기 확인).
-      this.emitHint('초점을 맞추는 중입니다. 화면을 향해 고정해주세요');
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      await this.camera.lockFocus();
-      this.emitHint('카메라를 QR 격자에 맞춰주세요');
+      this.emitHint('카메라를 QR 격자에 맞춰주세요 (화면을 탭하면 그 위치에 초점을 맞춥니다)');
 
       // 2. 경로 선택: BarcodeDetector 지원 여부로 A/B 결정
       if (BarcodeDetectorDecoder.isSupported()) {
@@ -393,6 +386,17 @@ export class ReceivePipeline {
   private emitHint(msg: string): void {
     this.overlay.setHint(msg);
     this.callbacks.onHint(msg);
+  }
+
+  /**
+   * 화면 탭으로 초점 위치 지정.
+   * @param nx 탭 위치의 정규화 x좌표 (0~1, 좌상단 원점)
+   * @param ny 탭 위치의 정규화 y좌표 (0~1, 좌상단 원점)
+   */
+  async focusAt(nx: number, ny: number): Promise<void> {
+    this.emitHint('초점을 맞추는 중입니다...');
+    await this.camera.focusAt(nx, ny);
+    this.emitHint('카메라를 QR 격자에 맞춰주세요 (화면을 탭하면 그 위치에 초점을 맞춥니다)');
   }
 
   /** 파이프라인 정지 및 자원 해제 */

@@ -48,30 +48,50 @@ export class CameraController {
   }
 
   /**
-   * 연속 자동초점이 수렴시킨 현재 초점 거리로 고정(manual)한다.
-   * 애니메이션 QR 격자처럼 내용이 계속 바뀌는 대상을 비추면 연속 자동초점이
+   * 사용자가 탭한 지점(정규화 좌표 0~1, 좌상단 원점)을 기준으로 초점을 맞춘다.
+   * pointsOfInterest로 초점 영역을 지정하고 초점을 재시도시킨 뒤,
+   * 수렴할 시간을 준 다음 그 순간의 거리로 manual 고정한다.
+   * 애니메이션 QR 격자처럼 내용이 계속 바뀌는 대상을 연속초점으로 비추면
    * 매 프레임 다시 초점을 찾으려다 실패해 계속 흐릿한 상태가 되는 기기가 있음
-   * (실기기 테스트에서 확인). 정적인 화면을 잠깐 비추게 한 뒤 이 메서드로
-   * 그 순간의 초점 거리를 고정하면 이후 애니메이션 중에는 초점이 흔들리지 않는다.
-   * focusDistance manual 모드 미지원 기기는 조용히 무시하고 연속초점 유지.
+   * (실기기 테스트에서 확인) — 그래서 탭한 순간의 초점을 고정해 유지한다.
+   * pointsOfInterest·manual 초점 미지원 기기에서는 조용히 무시하고 연속초점 유지.
    */
-  async lockFocus(): Promise<void> {
+  async focusAt(nx: number, ny: number): Promise<void> {
     const track = this.stream?.getVideoTracks()[0];
     if (!track) return;
 
     try {
-      const capabilities = track.getCapabilities?.() as MediaTrackCapabilities & { focusMode?: string[]; focusDistance?: { min: number; max: number; step: number } };
-      const settings = track.getSettings?.() as MediaTrackSettings & { focusDistance?: number };
+      const capabilities = track.getCapabilities?.() as MediaTrackCapabilities & {
+        focusMode?: string[];
+        pointsOfInterest?: unknown;
+      };
 
-      if (!capabilities?.focusMode?.includes('manual') || settings?.focusDistance === undefined) {
-        return; // manual 초점 미지원 — 연속초점 유지
+      const advanced: MediaTrackConstraintSet[] = [];
+      if (capabilities?.pointsOfInterest) {
+        advanced.push({ pointsOfInterest: [{ x: nx, y: ny }] } as MediaTrackConstraintSet);
       }
+      if (capabilities?.focusMode?.includes('single-shot')) {
+        advanced.push({ focusMode: 'single-shot' } as MediaTrackConstraintSet);
+      } else if (capabilities?.focusMode?.includes('continuous')) {
+        advanced.push({ focusMode: 'continuous' } as MediaTrackConstraintSet);
+      }
+      if (advanced.length === 0) return; // 탭 초점 미지원 기기
 
-      await track.applyConstraints({
-        advanced: [{ focusMode: 'manual', focusDistance: settings.focusDistance } as MediaTrackConstraintSet]
-      });
+      await track.applyConstraints({ advanced });
+
+      // 탭한 지점에 초점이 수렴할 시간을 줌
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      // 그 순간의 초점 거리로 고정 (manual 미지원 기기는 조용히 무시하고 연속초점 유지)
+      const capabilities2 = track.getCapabilities?.() as MediaTrackCapabilities & { focusMode?: string[] };
+      const settings = track.getSettings?.() as MediaTrackSettings & { focusDistance?: number };
+      if (capabilities2?.focusMode?.includes('manual') && settings?.focusDistance !== undefined) {
+        await track.applyConstraints({
+          advanced: [{ focusMode: 'manual', focusDistance: settings.focusDistance } as MediaTrackConstraintSet]
+        });
+      }
     } catch {
-      // 초점 고정 실패: 조용히 무시하고 연속초점 유지
+      // 탭 초점 실패: 조용히 무시하고 연속초점 유지
     }
   }
 
